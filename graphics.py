@@ -15,18 +15,18 @@ def draw_recon(x,y, width,height, id):
 
 def draw_missile(x,y, width,height, id):
     if id[2] == "W":
-        pythonGraph.draw_image("images/m-w.png", x, y, width, height)
+        pythonGraph.draw_image("images/M-W.png", x, y, width, height)
     elif id[2] == "N":
-        pythonGraph.draw_image("images/m-n.png", x, y, width, height)
+        pythonGraph.draw_image("images/M-N.png", x, y, width, height)
     elif id[2] == "E":
-        pythonGraph.draw_image("images/m-e.png", x, y, width, height)
+        pythonGraph.draw_image("images/M-E.png", x, y, width, height)
     elif id[2] == "S":
-        pythonGraph.draw_image("images/m-s.png", x, y, width, height)
+        pythonGraph.draw_image("images/M-S.png", x, y, width, height)
 
 def draw_explosion(x,y, width,height):
-    pythonGraph.draw_image("images/e.png", x, y, width, height)
+    pythonGraph.draw_image("images/E.png", x, y, width, height)
 def draw_countermeasure(x,y, width,height):
-    pythonGraph.draw_image("images/c.png", x, y, width, height)
+    pythonGraph.draw_image("images/C.png", x, y, width, height)
 
 def draw_air_defense(x,y, width,height, id):
     filename = str("images/" + id + ".png")

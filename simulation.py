@@ -15,6 +15,7 @@ a2g = 0
 bombs = 0
 countermeasures = 0
 fuel = 100
+missle_warning = False
 
 #static map data to store
 
@@ -105,7 +106,7 @@ def get_field_of_view():
 # -----------------------------------------------------------
 # YOUR FUNCTION GOES HERE
 def get_player_action():
-    global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y 
+    global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y, missle_warning  
     fire_command = ""
     def_command = ""
     ########################
@@ -115,40 +116,58 @@ def get_player_action():
     ai.intel_balloons(player_x, player_y, field_of_view)
 
     ########################
+    ####Dodging mechanic####
+    ########################
+
+    #0. determine if there is a threat we need to dodge. If so, send a safe heading command and ignore target calculations
+    for threat in entities:
+        if str(threat[2])[0] == "M":
+            missle_warning = True
+    if missle_warning == True:
+        #dodge immediately
+        command_to_send = ai.dodge_missile(player_x, player_y, target)
+        #re-evaluate whether to dodge
+        missle_warning = False
+        for threat in entities:
+            if str(threat[2])[0] == "M":
+                missle_warning = True
+    
+    ########################
     ####Target Selection####
     ########################
 
-    #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
-    fuel_data = ai.check_fuel(player_x, player_y)
-        #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
-    if (fuel <= (fuel_data[0] + 5)) or (player_symbol[0] == "F" and a2a==0):
-        print("low fuel or missiles, reorinenting")
-        target = ai.fuel_sites[fuel_data[1]]
-    
-    #2. if fuel is not an issue and there are no discovered balloons, switch to patroling between two baloon points
-    elif len(ai.discovered_balloons) < 1:
-        target = ai.patrol(player_x, player_y, target)
+    #only enter the main logic sequence if there are no immediate threats to dodge (else)
+    else:       
+        #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
+        fuel_data = ai.check_fuel(player_x, player_y)
+            #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
+        if (fuel <= (fuel_data[0] + 5)) or (player_symbol[0] == "F" and a2a==0):
+            print("low fuel or missiles, reorinenting")
+            target = ai.fuel_sites[fuel_data[1]]
+        
+        #2. if fuel is not an issue and there are no discovered balloons, switch to patroling between two baloon points
+        elif len(ai.discovered_balloons) < 1:
+            target = ai.patrol(player_x, player_y, target)
 
-    #3. send a fighter to attack balloons
-    else:
-        target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)           
-    
-    ########################
-    #######Navigation#######
-    ########################
-    #we determined the target, now we move to it with the following navigation code
-    #we always move in the x direction first, then the y direction
-    command_to_send = ai.navigate_simple(player_x, player_y, target)
+        #3. send a fighter to attack balloons
+        else:
+            target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)           
+        
+        ########################
+        #######Navigation#######
+        ########################
+        #we determined the target, now we move to it with the following navigation code
+        #we always move in the x direction first, then the y direction
+        command_to_send = ai.navigate_simple(player_x, player_y, target)
 
-
-    ########################
-    ##Additional  Commands##
-    ########################
-    #if we need to append any commands earlier, send
-    if fire_command != "":
-        #we will change to both send direction and fire command once server is fixed. also change l72 in ai.py
-        #command_to_send += fire_command 
-        command_to_send = fire_command 
+        ########################
+        ##Additional  Commands##
+        ########################
+        #if we need to append any commands earlier, send
+        if fire_command != "":
+            #we will change to both send direction and fire command once server is fixed. also change l72 in ai.py
+            command_to_send += fire_command 
+            #command_to_send = fire_command 
 
     
     

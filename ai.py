@@ -4,6 +4,7 @@ import simulation
 #map data
 discovered_balloons = []
 fuel_sites = [(6,11), (19,3),      (9,19), (26,8), (41,24), (25,35)]
+static_intel = []
 
 #gathers intel from the map
 def intel_balloons(player_x, player_y, field_of_view):
@@ -84,8 +85,8 @@ def balloonfarm(player_x, player_y, field_of_view):
     for i in discovered_balloons:
         #determine if we can get a shot on any balloon
         if in_range(i[0], i[1], 4):
-            #fire_command = ";ATK,A2A"    
-            fire_command = "ATK,A2A"
+            fire_command = ";ATK,A2A"    
+            #fire_command = "ATK,A2A"
             discovered_balloons.remove((i[0], i[1]))
             #if there is another baloon, target it
             if len(discovered_balloons) > 1:
@@ -103,7 +104,16 @@ def balloonfarm(player_x, player_y, field_of_view):
             return(best_balloon, fire_command)      
 
 def ai_recon():
-    print()
+    #check each entity, and add to the static list if it is a static
+    for entry in simulation.entities:
+        if entry[2] == "AF":
+            static_intel.append(entry)
+            print(simulation.entities)  
+    #check each moving entity and add to the dynamic list (do we actually need this?)
+    #check each entity in the static list and determine if it is still alive
+    for entry in static_intel:
+        print()
+    #broadcast via radio all data
 
 def navigate_simple(player_x, player_y, target):
     if player_x < target[0]:
@@ -116,6 +126,58 @@ def navigate_simple(player_x, player_y, target):
         return("DIR,NORTH")
     else:
         return("DIR,NORTH")
+
+def dodge_missile(player_x, player_y, target):
+    #define potential actions
+    print("Beginning dodge sequence")
+    possible_commands = ["DIR,NORTH", "DIR,EAST", "DIR,SOUTH", "DIR,WEST"]
+    fire_command = ""
+    #by changing the awareness radius, we can change approx how many tiles the plane moves when dodging
+    #5 => one tile back; 10=> 2 tiles back
+    aware_radius = 10
+    #detect missiles in fov and evaluate which directions are best to avoid
+    for threat in simulation.entities:
+        if str(threat[2])[0] == "M":
+            if int(threat[0]) > player_x and int(threat[0]) < (player_x + aware_radius) and "DIR,EAST" in possible_commands:
+                possible_commands.remove("DIR,EAST")
+                fire_command = ";DEF"
+                #return "DIR,WEST"
+            elif int(threat[0]) < player_x and int(threat[0]) > (player_x - aware_radius) and "DIR,WEST" in possible_commands:
+                possible_commands.remove("DIR,WEST")
+                fire_command = ";DEF"
+                #return "DIR,EAST"
+            elif int(threat[1]) > player_y and int(threat[1]) < (player_y + aware_radius) and "DIR,SOUTH" in possible_commands:
+                possible_commands.remove("DIR,SOUTH")
+                fire_command = ";DEF"
+                #return "DIR,NORTH"
+            elif int(threat[1]) < player_y and int(threat[1]) > (player_y - aware_radius) and "DIR,NORTH" in possible_commands:
+                possible_commands.remove("DIR,NORTH")
+                fire_command = ";DEF"
+                #return "DIR,SOUTH"
+    print("possible moves are " + str(possible_commands))
+    #determine if the desired command is allowed, and if not, choose the opposite direction
+    if player_x < target[0]:
+        if "DIR_EAST" in possible_commands:
+            return "DIR,EAST" + str(fire_command)
+        else:
+            return "DIR,WEST" + str(fire_command)
+    if player_x > target[0]:
+        if "DIR,WEST" in possible_commands:
+            return "DIR,WEST" + str(fire_command)
+        else:
+            return "DIR,EAST" + str(fire_command)
+    if player_y < target[1]:
+        if "DIR,SOUTH" in possible_commands:
+            return "DIR,SOUTH" + str(fire_command)
+        else:
+            return "DIR,NORTH" + str(fire_command)
+    if player_y > target[1]:
+        if "DIR,NORTH" in possible_commands:
+            return "DIR,NORTH" + str(fire_command)
+        else:
+            return "DIR,SOUTH" + str(fire_command)
+    else:
+        return navigate_simple(simulation.player_x, simulation.player_y, simulation.target)
 
 #indev, don't run
 def navigate_advanced(player_x, player_y, field_of_view):

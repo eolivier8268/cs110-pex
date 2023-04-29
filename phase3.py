@@ -47,7 +47,7 @@ while pythonGraph.window_not_closed():
     erase()
     draw()
     update()
-    pythonGraph.update_window()
+    pythonGraph.update_window(),
     
     #pythonGraph.wait_for_close()
 
