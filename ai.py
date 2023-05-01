@@ -5,6 +5,11 @@ import simulation
 discovered_balloons = []
 fuel_sites = [(6,11), (19,3),      (9,19), (26,8), (41,24), (25,35)]
 static_intel = []
+enemey_bases = [(37,39), (45,35), (34,4), (42,10), (6,37), (13,40), (30,22), (20,19)]
+blue_bases = [(37,39), (45,35)]
+red_bases = [(34,4), (42,10)]
+yellow_bases = [(6,37), (13,40)]
+green_bases = [(30,22), (20,21)]
 
 #gathers intel from the map
 def intel_balloons(player_x, player_y, field_of_view):
@@ -102,6 +107,25 @@ def balloonfarm(player_x, player_y, field_of_view):
             best_balloon_dist = min(balloon_routes)
             best_balloon = discovered_balloons[balloon_routes.index(best_balloon_dist)]
             return(best_balloon, fire_command)      
+
+def nearestEnemeyBase(player_x, player_y):
+    global enemey_bases
+    target = []
+    temp_bases = enemey_bases
+    final_dist = 100
+    fire_command = ""
+    for base in temp_bases:
+        dist = math.dist([player_x, player_y], base)
+        if dist < final_dist:
+            final_dist = dist
+            target = base
+        #temp_bases.remove(base)
+    print("selected target is " + str(target) + ". Determining whether to bomb now.")
+    if player_x == target[0] and player_y == target[1]: #checks if we can get a shot once we confirm target
+        fire_command = ";ATK,BOMB" 
+        enemey_bases.remove(target)  
+        
+    return (target,fire_command)
 
 def ai_recon():
     #check each entity, and add to the static list if it is a static

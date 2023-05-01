@@ -87,4 +87,4 @@ def draw_hud(x,y):
     pythonGraph.draw_text("coordinates: " + str(x) + ", " + str(y), 5, 5, "white", 24)
     pythonGraph.draw_text("target: " + str(simulation.target), 5, 20, "white", 24)
     pythonGraph.draw_text("fuel: " + str(simulation.fuel), 5, 35, "white", 24)
-    pythonGraph.draw_text("a2a: " + str(simulation.a2a) + "; a2g: " + str(simulation.a2g) + "; bombs: " + str(simulation.bombs), 5, 50, "white", 24)
+    pythonGraph.draw_text("a2a: " + str(simulation.a2a) + "; a2g: " + str(simulation.a2g) + "; bombs: " + str(simulation.bombs) + "; cm's: " + str(simulation.countermeasures), 5, 50, "white", 24)

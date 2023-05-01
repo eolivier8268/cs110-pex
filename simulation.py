@@ -32,7 +32,7 @@ player_symbol = ""
 SERVER_IP_ADDRESS = "96.66.89.56"
 PLAYER_ID = "snap"
 PLAYER_TEAM = "silver"
-PLAYER_AC_TYPE = "fighter"
+PLAYER_AC_TYPE = "bomber"
 COMMAND_CHANNEL = "acs_server"
 TEAM_CHANNEL = "comm"
 client = None
@@ -114,11 +114,11 @@ def get_player_action():
     ########################
     #check for ballons on the map and add to the ai.discovered_balloons list
     ai.intel_balloons(player_x, player_y, field_of_view)
+    print("bases remaining: " + str(ai.enemey_bases))
 
     ########################
     ####Dodging mechanic####
     ########################
-
     #0. determine if there is a threat we need to dodge. If so, send a safe heading command and ignore target calculations
     for threat in entities:
         if str(threat[2])[0] == "M":
@@ -135,24 +135,33 @@ def get_player_action():
     ########################
     ####Target Selection####
     ########################
-
     #only enter the main logic sequence if there are no immediate threats to dodge (else)
     else:       
         #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
         fuel_data = ai.check_fuel(player_x, player_y)
             #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
-        if (fuel <= (fuel_data[0] + 5)) or (player_symbol[0] == "F" and a2a==0):
-            print("low fuel or missiles, reorinenting")
+        if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0):
+            print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
         
-        #2. if fuel is not an issue and there are no discovered balloons, switch to patroling between two baloon points
+        #2. attempt to bomb the closest base
+        
+        elif len(ai.enemey_bases) >= 1:
+            target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
+
+        #3. once all bases have been destroyed, patrol between two baloon points
         elif len(ai.discovered_balloons) < 1:
             target = ai.patrol(player_x, player_y, target)
 
-        #3. send a fighter to attack balloons
+        #4. send a fighter to attack balloons
         else:
             target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)           
         
+        #4. once all targets accomplished, patrol between two points
+        #else:
+        #    target = ai.patrol(player_x, player_y, target)
+        #    print('all objectives completed. returning to patrol sequence')
+
         ########################
         #######Navigation#######
         ########################
@@ -165,9 +174,7 @@ def get_player_action():
         ########################
         #if we need to append any commands earlier, send
         if fire_command != "":
-            #we will change to both send direction and fire command once server is fixed. also change l72 in ai.py
             command_to_send += fire_command 
-            #command_to_send = fire_command 
 
     
     
