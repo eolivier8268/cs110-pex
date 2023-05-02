@@ -3,9 +3,11 @@ import simulation
 
 #map data
 discovered_balloons = []
-fuel_sites = [(6,11), (19,3),      (9,19), (26,8), (41,24), (25,35)]
+fuel_sites = [(6,11), (19,3), (9,19), (26,8), (41,24), (25,35)]
 static_intel = []
+local_threats = []
 enemey_bases = [(37,39), (45,35), (34,4), (42,10), (6,37), (13,40), (30,22), (20,19)]
+enemey_iads = []
 blue_bases = [(37,39), (45,35)]
 red_bases = [(34,4), (42,10)]
 yellow_bases = [(6,37), (13,40)]
@@ -26,6 +28,33 @@ def intel_balloons(player_x, player_y, field_of_view):
                     discovered_balloons.append((player_x+dx, player_y+dy))
                 #clear duplicates from balloons list by converting to and from a set
                 discovered_balloons = list(set(discovered_balloons))
+
+def intel_hostiles(player_x, player_y, field_of_view):
+    global local_threats
+    #check for any undiscovered balloons in the fov
+    for row in field_of_view:
+        for column in row:
+            for entry in column:
+                #check for balloons in the fov
+                if entry[1] == "H" or entry == "BN":
+                    #calculate the offset from the center, and use to calculate the coordinates of the balloon
+                    dist = math.dist([player_x, player_y], entry)
+                    dy = field_of_view.index(row) - 6
+                    dx = row.index(column) - 6
+                    local_threats.append((player_x+dx, player_y+dy))
+                local_threats = list(set(local_threats))
+
+def ai_recon():
+    #check each entity, and add to the static list if it is a static
+    for entry in simulation.entities:
+        if entry[2] == "AF":
+            static_intel.append(entry)
+            print(simulation.entities)  
+    #check each moving entity and add to the dynamic list (do we actually need this?)
+    #check each entity in the static list and determine if it is still alive
+    for entry in static_intel:
+        print()
+    #broadcast via radio all data
 
 # determines if you are facing and in range of a target
 def in_range(x, y, distance):
@@ -57,9 +86,11 @@ def check_fuel(player_x, player_y):
     return((best_fuel_dist, fuel_routes.index(best_fuel_dist)))
     
 def patrol(player_x, player_y, target):
-    point1 = (6,22)
+    #point1 = (6,22) this is the point for the balloon patrol
+    point1 = (18,15)    #this is the corner of green base
     dist1 = abs(point1[0] - player_x) + abs(point1[1] - player_y)
-    point2 = (26,2)
+    #point2 = (26,2) balloon patrol
+    point2 = (33,28)
     dist2 = abs(point2[0] - player_x) + abs(point2[1] - player_y)
     
     #if the player is at a different target (ex refueling), return to the closest patrol point
@@ -86,7 +117,9 @@ def patrol(player_x, player_y, target):
 def balloonfarm(player_x, player_y, field_of_view):
     global discovered_balloons
     fire_command = ""
-    balloon_routes = []; best_balloon_dist = 100; best_balloon = 100 
+    balloon_routes = []
+    best_balloon_dist = 100
+    best_balloon = 100 
     for i in discovered_balloons:
         #determine if we can get a shot on any balloon
         if in_range(i[0], i[1], 4):
@@ -108,6 +141,24 @@ def balloonfarm(player_x, player_y, field_of_view):
             best_balloon = discovered_balloons[balloon_routes.index(best_balloon_dist)]
             return(best_balloon, fire_command)      
 
+def a2akill(player_x, player_y, target):
+    global local_threats
+    fire_command = ""
+    target = ()
+    final_dist = 100
+    #calculate how many planes we can get a shot on
+    for i in local_threats:
+        if in_range(i[0], i[1], 6):
+            fire_command += ";ATK,A2A"
+    #calculate the nearest plane to target
+    i = ()
+    for i in local_threats:
+        dist = math.dist([player_x, player_y], i)
+        if dist < final_dist:
+            final_dist = dist
+            target = i
+    return (target, fire_command)
+
 def nearestEnemeyBase(player_x, player_y):
     global enemey_bases
     target = []
@@ -120,24 +171,11 @@ def nearestEnemeyBase(player_x, player_y):
             final_dist = dist
             target = base
         #temp_bases.remove(base)
-    print("selected target is " + str(target) + ". Determining whether to bomb now.")
     if player_x == target[0] and player_y == target[1]: #checks if we can get a shot once we confirm target
         fire_command = ";ATK,BOMB" 
         enemey_bases.remove(target)  
         
     return (target,fire_command)
-
-def ai_recon():
-    #check each entity, and add to the static list if it is a static
-    for entry in simulation.entities:
-        if entry[2] == "AF":
-            static_intel.append(entry)
-            print(simulation.entities)  
-    #check each moving entity and add to the dynamic list (do we actually need this?)
-    #check each entity in the static list and determine if it is still alive
-    for entry in static_intel:
-        print()
-    #broadcast via radio all data
 
 def navigate_simple(player_x, player_y, target):
     if player_x < target[0]:
@@ -204,42 +242,38 @@ def dodge_missile(player_x, player_y, target):
         return navigate_simple(simulation.player_x, simulation.player_y, simulation.target)
 
 #indev, don't run
-def navigate_advanced(player_x, player_y, field_of_view):
-    global command_to_send
-    possible_commands = ["DIR,NORTH", "DIR,EAST", "DIR,SOUTH", "DIR,WEST"]
-    threats = []
-    #check if there are hostilities in the fov fov and add them to a threat array
-    for row in field_of_view:
-        for column in row:
-            for entry in column:
-                #check for planes in the fov
-                if entry[0:1] == "FH" or entry[0:1] == "BH" or entry[0:1] == "RH" :
-                    threats.append([entry, row, column])
-                #check for bases, iads in the fov
-                elif entry == "AH" or entry == "DH":
-                    threats.append([entry, row, column])
-                #check for missiles in the fov
-                elif entry[0] == "M":
-                    threats.append([entry, row, column])
+# def navigate_advanced(player_x, player_y, field_of_view):
+#     global command_to_send
+#     possible_commands = ["DIR,NORTH", "DIR,EAST", "DIR,SOUTH", "DIR,WEST"]
+#     threats = []
+#     #check if there are hostilities in the fov fov and add them to a threat array
+#     for row in field_of_view:
+#         for column in row:
+#             for entry in column:
+#                 #check for planes in the fov
+#                 if entry[0:1] == "FH" or entry[0:1] == "BH" or entry[0:1] == "RH" :
+#                     threats.append([entry, row, column])
+#                 #check for bases, iads in the fov
+#                 elif entry == "AH" or entry == "DH":
+#                     threats.append([entry, row, column])
+#                 #check for missiles in the fov
+#                 elif entry[0] == "M":
+#                     threats.append([entry, row, column])
     
-    #first avoid missiles by eliminating options
-    for threat in threats:
-        if str(threat[0][0]) == "M":
-            #check if the missile falls on each side of the plane
-            if threat[1] > player_x and threat[1] < (player_x + 5):
-                possible_commands.remove("DIR,EAST")
-            elif threat[1] < player_x and threat[1] > (player_x - 5):
-                possible_commands.remove("DIR,WEST")
-            elif threat[2] > player_y and threat[2] < (player_y + 5):
-                possible_commands.remove("DIR,SOUTH")
-            elif threat[2] < player_y and threat[2] > (player_y - 5):
-                possible_commands.remove("DIR,NORTH")
-
-
-    #then avoid planes and bases based on proximity
-
-    #if no threats
-    #check if we are lined up or at a diagonal offset
-        #if we are diagonal, randomize direction
-    #print(threats)
-    
+#     #first avoid missiles by eliminating options
+#     for threat in threats:
+#         if str(threat[0][0]) == "M":
+#             #check if the missile falls on each side of the plane
+#             if threat[1] > player_x and threat[1] < (player_x + 5):
+#                 possible_commands.remove("DIR,EAST")
+#             elif threat[1] < player_x and threat[1] > (player_x - 5):
+#                 possible_commands.remove("DIR,WEST")
+#             elif threat[2] > player_y and threat[2] < (player_y + 5):
+#                 possible_commands.remove("DIR,SOUTH")
+#             elif threat[2] < player_y and threat[2] > (player_y - 5):
+#                 possible_commands.remove("DIR,NORTH")
+#     #then avoid planes and bases based on proximity
+#     #if no threats
+#     #check if we are lined up or at a diagonal offset
+#         #if we are diagonal, randomize direction
+#     #print(threats)

@@ -1,4 +1,5 @@
 import time
+import math
 import paho.mqtt.client as mqtt
 import threading
 import ai
@@ -32,7 +33,7 @@ player_symbol = ""
 SERVER_IP_ADDRESS = "96.66.89.56"
 PLAYER_ID = "snap"
 PLAYER_TEAM = "silver"
-PLAYER_AC_TYPE = "bomber"
+PLAYER_AC_TYPE = "fighter"
 COMMAND_CHANNEL = "acs_server"
 TEAM_CHANNEL = "comm"
 client = None
@@ -114,14 +115,15 @@ def get_player_action():
     ########################
     #check for ballons on the map and add to the ai.discovered_balloons list
     ai.intel_balloons(player_x, player_y, field_of_view)
-    print("bases remaining: " + str(ai.enemey_bases))
+    #print("bases remaining: " + str(ai.enemey_bases))
 
     ########################
     ####Dodging mechanic####
     ########################
     #0. determine if there is a threat we need to dodge. If so, send a safe heading command and ignore target calculations
     for threat in entities:
-        if str(threat[2])[0] == "M":
+        dist = math.dist([player_x, player_y], [threat[0], threat[1]])
+        if str(threat[2])[0] == "M" and dist < 4:
             missle_warning = True
     if missle_warning == True:
         #dodge immediately
@@ -145,22 +147,29 @@ def get_player_action():
             target = ai.fuel_sites[fuel_data[1]]
         
         #2. attempt to bomb the closest base
-        
-        elif len(ai.enemey_bases) >= 1:
-            target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
+        #elif len(ai.enemey_bases) >= 1:
+        #    target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
+
+        #. patrol between points and attempt to shoot down fighters
+        elif len(ai.local_threats) < 1:
+            target = ai.patrol(player_x, player_y,target)
+        else: 
+            target, fire_command = ai.a2akill(player_x, player_y, target)
 
         #3. once all bases have been destroyed, patrol between two baloon points
-        elif len(ai.discovered_balloons) < 1:
-            target = ai.patrol(player_x, player_y, target)
+        #elif len(ai.discovered_balloons) < 1:
+        #    target = ai.patrol(player_x, player_y, target)
 
         #4. send a fighter to attack balloons
-        else:
-            target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)           
+        #else:
+        #    print('all objectives completed. returning to patrol sequence')
+        #    target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)
+                       
         
         #4. once all targets accomplished, patrol between two points
         #else:
         #    target = ai.patrol(player_x, player_y, target)
-        #    print('all objectives completed. returning to patrol sequence')
+        #    
 
         ########################
         #######Navigation#######
