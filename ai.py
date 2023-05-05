@@ -154,7 +154,8 @@ def a2akill(player_x, player_y, target):
     shot_range = 3
     for i in local_threats:
         #calculate how many planes we can get a shot on
-        if (player_x < (i[0]+shot_range) and player_x > (i[0]-shot_range)) and (player_y < (i[1]+shot_range) and player_y > (i[1]-shot_range)):
+        #either players within 3 tiles, or in a straight line within 6 tiles
+        if ((player_x < (i[0]+shot_range) and player_x > (i[0]-shot_range)) and (player_y < (i[1]+shot_range) and player_y > (i[1]-shot_range))) or in_range(i[0], i[1], 6):
         #if in_range(i[0], i[1], 6):
             fire_command += ";ATK,A2A"
         #calculate the nearest plane to follow
