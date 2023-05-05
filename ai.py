@@ -23,8 +23,8 @@ def intel_balloons(player_x, player_y, field_of_view):
                 #check for balloons in the fov
                 if entry == "BN":
                     #calculate the offset from the center, and use to calculate the coordinates of the balloon
-                    dy = field_of_view.index(row) - 6
-                    dx = row.index(column) - 6
+                    dy = field_of_view.index(row) - simulation.player_view_radius
+                    dx = row.index(column) - simulation.player_view_radius
                     discovered_balloons.append((player_x+dx, player_y+dy))
                 #clear duplicates from balloons list by converting to and from a set
                 discovered_balloons = list(set(discovered_balloons))
@@ -32,15 +32,18 @@ def intel_balloons(player_x, player_y, field_of_view):
 def intel_hostiles(player_x, player_y, field_of_view):
     global local_threats
     #check for any undiscovered balloons in the fov
+    local_threats = []
     for row in field_of_view:
         for column in row:
             for entry in column:
-                #check for balloons in the fov
-                if entry[1] == "H" or entry == "BN":
+                #print(entry)
+                #check for balloons or enemy planes in the fov
+                if entry[:2] == "BH" or entry[:2] == "FH" or entry[:2] == "RH" or entry == "BN":
+                    print("tracking hostile entity: " + str(entry))
                     #calculate the offset from the center, and use to calculate the coordinates of the balloon
-                    dist = math.dist([player_x, player_y], entry)
-                    dy = field_of_view.index(row) - 6
-                    dx = row.index(column) - 6
+                    #dist = math.dist([player_x, player_y], entry)
+                    dy = field_of_view.index(row) - simulation.player_view_radius
+                    dx = row.index(column) - simulation.player_view_radius
                     local_threats.append((player_x+dx, player_y+dy))
                 local_threats = list(set(local_threats))
 
@@ -49,11 +52,13 @@ def ai_recon():
     for entry in simulation.entities:
         if entry[2] == "AF":
             static_intel.append(entry)
-            print(simulation.entities)  
-    #check each moving entity and add to the dynamic list (do we actually need this?)
+            #print(simulation.entities)  
+    #check each moving entity and add to the dynamic list (do we actually need this? No)
     #check each entity in the static list and determine if it is still alive
     for entry in static_intel:
-        print()
+        #if the x,y tuple of the item in the fov equals the x,y tuple of the item in the entities list
+        if (entry[0],entry[1]) in simulation.entities:
+            print()
     #broadcast via radio all data
 
 # determines if you are facing and in range of a target
@@ -146,17 +151,16 @@ def a2akill(player_x, player_y, target):
     fire_command = ""
     target = ()
     final_dist = 100
-    #calculate how many planes we can get a shot on
     for i in local_threats:
+        #calculate how many planes we can get a shot on
         if in_range(i[0], i[1], 6):
             fire_command += ";ATK,A2A"
-    #calculate the nearest plane to target
-    i = ()
-    for i in local_threats:
+        #calculate the nearest plane to follow
         dist = math.dist([player_x, player_y], i)
         if dist < final_dist:
             final_dist = dist
-            target = i
+            target = (i[0], i[1])
+    print("pursing hostile at " + str(target))
     return (target, fire_command)
 
 def nearestEnemeyBase(player_x, player_y):
@@ -173,7 +177,7 @@ def nearestEnemeyBase(player_x, player_y):
         #temp_bases.remove(base)
     if player_x == target[0] and player_y == target[1]: #checks if we can get a shot once we confirm target
         fire_command = ";ATK,BOMB" 
-        enemey_bases.remove(target)  
+        enemey_bases.remove(target)
         
     return (target,fire_command)
 

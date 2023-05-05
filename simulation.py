@@ -7,7 +7,7 @@ import ai
 # PLAYER VARIABLES
 player_x = 13
 player_y = 13
-target = (6,11)
+target = (18,15)
 secondary_target = ()
 player_heading = "N"
 player_view_radius = 6
@@ -24,6 +24,7 @@ missle_warning = False
 world_map = []
 entities = []
 field_of_view = []
+last_update = time.time()
 
 UPDATE_INTERVAL_IN_SECONDS = 1.0
 last_update = time.time()
@@ -91,13 +92,13 @@ def get_field_of_view():
             if (x == player_x) and (player_y == y):
                 #print("player symbol: " + player_symbol)
                 if player_heading == 'N':
-                    row[6].append(str(player_symbol))
+                    row[player_view_radius].append(str(player_symbol))
                 elif player_heading == 'S':
-                    row[6].append(str(player_symbol))
+                    row[player_view_radius].append(str(player_symbol))
                 elif player_heading == 'W':
-                    row[6].append(str(player_symbol))
+                    row[player_view_radius].append(str(player_symbol))
                 elif player_heading == 'E':
-                    row[6].append(str(player_symbol))
+                    row[player_view_radius].append(str(player_symbol))
         field_of_view.append(row)
     return field_of_view
     
@@ -109,12 +110,13 @@ def get_field_of_view():
 def get_player_action():
     global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y, missle_warning  
     fire_command = ""
-    def_command = ""
     ########################
-    ######### Intel#########
+    ######### Intel ########
     ########################
     #check for ballons on the map and add to the ai.discovered_balloons list
-    ai.intel_balloons(player_x, player_y, field_of_view)
+    #ai.intel_balloons(player_x, player_y, field_of_view)
+    ai.intel_hostiles(player_x, player_y, field_of_view)
+    print(ai.local_threats)
     #print("bases remaining: " + str(ai.enemey_bases))
 
     ########################
@@ -122,7 +124,8 @@ def get_player_action():
     ########################
     #0. determine if there is a threat we need to dodge. If so, send a safe heading command and ignore target calculations
     for threat in entities:
-        dist = math.dist([player_x, player_y], [threat[0], threat[1]])
+        #print(threat)
+        dist = math.dist([player_x, player_y], [int(threat[0]), int(threat[1])])
         if str(threat[2])[0] == "M" and dist < 4:
             missle_warning = True
     if missle_warning == True:
@@ -150,7 +153,7 @@ def get_player_action():
         #elif len(ai.enemey_bases) >= 1:
         #    target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
 
-        #. patrol between points and attempt to shoot down fighters
+        #. patrol between points and attempt to shoot down fighters if detected
         elif len(ai.local_threats) < 1:
             target = ai.patrol(player_x, player_y,target)
         else: 
@@ -245,9 +248,8 @@ def disconnect():
 # NETWORKING FUNCTION
 # Runs when the client connects to the server
 def on_connect(client, userdata, flags, rc):
-   print("Connected to server:", SERVER_IP_ADDRESS)
-   send_command("LOGIN," + PLAYER_ID + "," + PLAYER_TEAM + "," + PLAYER_AC_TYPE)
-   
+    print("Connected to server:", SERVER_IP_ADDRESS)
+    send_command("LOGIN," + PLAYER_ID + "," + PLAYER_TEAM + "," + PLAYER_AC_TYPE)
 # NETWORKING FUNCTION
 # This function listens for messages from the world and the team
 def listen_for_messages():
