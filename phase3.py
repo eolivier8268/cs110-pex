@@ -11,9 +11,9 @@ import simulation as simulation
 import ai
 
 # Specifies the Dimensions of the Screen
-SCREEN_WIDTH = 990
-SCREEN_HEIGHT = 990
-player_view_radius = 6
+SCREEN_WIDTH = 770
+SCREEN_HEIGHT = 770
+player_view_radius = 10
 
 def erase():
     pythonGraph.clear_window("WHITE")

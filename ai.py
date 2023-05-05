@@ -92,10 +92,10 @@ def check_fuel(player_x, player_y):
     
 def patrol(player_x, player_y, target):
     #point1 = (6,22) this is the point for the balloon patrol
-    point1 = (18,15)    #this is the corner of green base
+    point1 = (22,19)    #this is the corner of green base
     dist1 = abs(point1[0] - player_x) + abs(point1[1] - player_y)
     #point2 = (26,2) balloon patrol
-    point2 = (33,28)
+    point2 = (27,24)
     dist2 = abs(point2[0] - player_x) + abs(point2[1] - player_y)
     
     #if the player is at a different target (ex refueling), return to the closest patrol point
@@ -151,15 +151,20 @@ def a2akill(player_x, player_y, target):
     fire_command = ""
     target = ()
     final_dist = 100
+    shot_range = 3
     for i in local_threats:
         #calculate how many planes we can get a shot on
-        if in_range(i[0], i[1], 6):
+        if (player_x < (i[0]+shot_range) and player_x > (i[0]-shot_range)) and (player_y < (i[1]+shot_range) and player_y > (i[1]-shot_range)):
+        #if in_range(i[0], i[1], 6):
             fire_command += ";ATK,A2A"
         #calculate the nearest plane to follow
         dist = math.dist([player_x, player_y], i)
         if dist < final_dist:
             final_dist = dist
             target = (i[0], i[1])
+    #prevents you from getting stuck on balloon and then firing missle
+    if target[0] == player_x and target[1] == player_y:
+        target = (target[0]-3, target[1])
     print("pursing hostile at " + str(target))
     return (target, fire_command)
 
