@@ -47,11 +47,9 @@ def get_player_action():
             print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
 
-        #2. pursue the nearest plane from the radio's intel, or kill any plane in the fov
-        elif len(ai.local_threats) < 1:
-            target = ai.pursue(player_x, player_y,target)
-        elif len(ai.local_threats) > 0: 
-            target, fire_command = ai.a2akill(player_x, player_y, target)
+        #2. pursue the nearest plane in the fov
+        elif len(ai.local_threats) > 0:
+            target, fire_command = ai.a2akill(player_x,player_y,target)
         
         #3. if there are no planes, patrol around our base
         else:

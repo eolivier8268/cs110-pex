@@ -108,7 +108,69 @@ def get_player_action():
     ########################
     ######### Intel ########
     ########################
+    #get intel from the radio. Don't worry about planes in the fov
+    #waiting on parser for radio messages
+
+    ########################
+    ####Dodging mechanic####
+    ########################
+    #0. determine if there is a threat we need to dodge. If so, send a safe heading command and ignore target calculations
+    for threat in entities:
+        #print(threat)
+        dist = math.dist([player_x, player_y], [int(threat[0]), int(threat[1])])
+        if str(threat[2])[0] == "M" and dist < 4:
+            missle_warning = True
+    if missle_warning == True:
+        #dodge immediately
+        command_to_send = ai.dodge_missile(player_x, player_y, target)
+        #re-evaluate whether to dodge
+        missle_warning = False
+        for threat in entities:
+            if str(threat[2])[0] == "M":
+                missle_warning = True
+
+    ########################
+    ####Target Selection####
+    ########################
+    #only enter the main logic sequence if there are no immediate threats to dodge (else)
+    else:       
+        #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
+        fuel_data = ai.check_fuel(player_x, player_y)
+            #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
+        if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0):
+            print("low fuel or munitions, reorinenting")
+            target = ai.fuel_sites[fuel_data[1]]
+    
+        #2. attempt to bomb the closest base
+        elif len(ai.enemey_bases) >= 1:
+            target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
+
+        #3. patrol between points and attempt to shoot down fighters if detected
+        elif len(ai.local_threats) < 1:
+            target = ai.patrol(player_x, player_y,target)
+        
+        ########################
+        #######Navigation#######
+        ########################
+        #we determined the target above, now we move to it with the following navigation code
+        #we always move in the x direction first, then the y direction
+        command_to_send = ai.navigate_simple(player_x, player_y, target)
+
+        ########################
+        ##Additional  Commands##
+        ########################
+        #if we need to append any commands earlier, send
+        if fire_command != "":
+            command_to_send += fire_command 
+
+""" def get_player_action():
+    global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y, missle_warning, entities
+    fire_command = ""
+    ########################
+    ######### Intel ########
+    ########################
     #listen for radio messages
+    
     #gather intel about which planes are in the field of view
     ai.intel_hostiles(player_x, player_y, field_of_view)
 
@@ -142,10 +204,11 @@ def get_player_action():
             print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
 
-        #2. pursue the nearest plane in the fov
-        elif len(ai.local_threats) > 0:
-            print("starting fire sequence")
-            target, fire_command = ai.a2akill(player_x,player_y,target)
+        #2. pursue the nearest plane from the radio's intel, or kill any plane in the fov
+        elif len(ai.local_threats) < 1:
+            target = ai.pursue(player_x, player_y,target)
+        elif len(ai.local_threats) > 0: 
+            target, fire_command = ai.a2akill(player_x, player_y, target)
         
         #3. if there are no planes, patrol around our base
         else:
@@ -163,115 +226,7 @@ def get_player_action():
         ########################
         #if we need to append any commands earlier, send
         if fire_command != "":
-            command_to_send += fire_command 
-
-
-# -----------------------------------------------------------
-# get_player_action()
-# -----------------------------------------------------------
-# YOUR FUNCTION GOES HERE
-# def get_player_action():
-#     global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y, missle_warning, entities
-#     fire_command = ""
-#     ########################
-#     ######### Intel ########
-#     ########################
-#     #check for ballons on the map and add to the ai.discovered_balloons list
-#     #ai.intel_balloons(player_x, player_y, field_of_view)
-#     ai.intel_hostiles(player_x, player_y, field_of_view)
-#     #print(ai.local_threats)
-#     #print("bases remaining: " + str(ai.enemey_bases))
-
-#     ########################
-#     ####Dodging mechanic####
-#     ########################
-#     #0. determine if there is a threat we need to dodge. If so, send a safe heading command and ignore target calculations
-#     for threat in entities:
-#         #print(threat)
-#         dist = math.dist([player_x, player_y], [int(threat[0]), int(threat[1])])
-#         if str(threat[2])[0] == "M" and dist < 4:
-#             missle_warning = True
-#     if missle_warning == True:
-#         #dodge immediately
-#         command_to_send = ai.dodge_missile(player_x, player_y, target)
-#         #re-evaluate whether to dodge
-#         missle_warning = False
-#         for threat in entities:
-#             if str(threat[2])[0] == "M":
-#                 missle_warning = True
-    
-#     ########################
-#     ####Target Selection####
-#     ########################
-#     #only enter the main logic sequence if there are no immediate threats to dodge (else)
-#     else:       
-#         #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
-#         fuel_data = ai.check_fuel(player_x, player_y)
-#             #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
-#         if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0) or (player_symbol[0] == "R" and a2a==0):
-#             print("low fuel or munitions, reorinenting")
-#             target = ai.fuel_sites[fuel_data[1]]
-        
-#         #2. attempt to bomb the closest base
-#         #elif len(ai.enemey_bases) >= 1:
-#         #    target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
-
-#         #. patrol between points and attempt to shoot down fighters if detected
-#         elif len(ai.local_threats) < 1:
-#             target = ai.patrol(player_x, player_y,target)
-#         else: 
-#             target, fire_command = ai.a2akill(player_x, player_y, target)
-
-#         #3. once all bases have been destroyed, patrol between two baloon points
-#         #elif len(ai.discovered_balloons) < 1:
-#         #    target = ai.patrol(player_x, player_y, target)
-
-#         #4. send a fighter to attack balloons
-#         #else:
-#         #    print('all objectives completed. returning to patrol sequence')
-#         #    target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)
-                       
-        
-#         #4. once all targets accomplished, patrol between two points
-#         #else:
-#         #    target = ai.patrol(player_x, player_y, target)
-#         #    
-
-#         ########################
-#         #######Navigation#######
-#         ########################
-#         #we determined the target, now we move to it with the following navigation code
-#         #we always move in the x direction first, then the y direction
-#         command_to_send = ai.navigate_simple(player_x, player_y, target)
-
-#         ########################
-#         ##Additional  Commands##
-#         ########################
-#         #if we need to append any commands earlier, send
-#         if fire_command != "":
-#             command_to_send += fire_command 
-
-    
-    
-    
-#     # if pythonGraph.key_down("left"):
-#     #     command_to_send = "DIR,WEST"
-#     # elif pythonGraph.key_down("right"):
-#     #     command_to_send = "DIR,EAST"
-#     # elif pythonGraph.key_down("up"):
-#     #     command_to_send = "DIR,NORTH"
-#     # elif pythonGraph.key_down("down"):
-#     #     command_to_send = "DIR,SOUTH"
-#     # elif pythonGraph.key_down("c"):
-#     #     command_to_send = "DEF"
-#     # elif pythonGraph.key_down("1"):
-#     #     command_to_send = "ATK,A2A"
-#     # elif pythonGraph.key_down("2"):
-#     #     command_to_send = "ATK,A2G"
-#     # elif pythonGraph.key_down("3"):
-#     #     command_to_send = "ATK,BOMB"
-#     # elif pythonGraph.key_down("q"):
-#     #     PLAYER_AC_TYPE = "fighter"
+            command_to_send += fire_command  """
 
 # update_simulation()
 # checks time and if one second has passed, the current command is sent to the server

@@ -109,9 +109,9 @@ def intel_from_broadcasts(message):
     global_threats = list(set(global_threats))
     print("global threats "+ str(global_threats))
     enemey_bases = list(set(enemey_bases))
-    print('enemey_bases ' + enemey_bases)
+    print('enemey_bases ' + str(enemey_bases))
     enemey_iads = list(set(enemey_iads))
-    print("enemy_bases "+ enemey_bases)
+    print("enemy_iads "+ str(enemey_iads))
 
 # determines if you are facing and in range of a target
 def in_range(x, y, distance):
@@ -256,9 +256,16 @@ def a2akill(player_x, player_y, target):
 def nearestEnemeyBase(player_x, player_y):
     global enemey_bases
     target = []
-    temp_bases = enemey_bases
+    temp_bases = []
+    #define temp bases to all bases from the recon plane
+    i=[]; j=[]
+    for i in enemey_bases:
+        temp_bases.append(i)
+    for j in enemey_iads:
+        temp_bases.append(j)
     final_dist = 100
     fire_command = ""
+    print(temp_bases)
     for base in temp_bases:
         dist = math.dist([player_x, player_y], base)
         if dist < final_dist:

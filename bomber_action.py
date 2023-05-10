@@ -47,7 +47,7 @@ def get_player_action():
             target = ai.fuel_sites[fuel_data[1]]
     
         #2. attempt to bomb the closest base
-        elif len(ai.enemey_bases) >= 1:
+        elif len(ai.enemey_bases) > 0 or len(ai.enemey_iads)> 0:
             target, fire_command = ai.nearestEnemeyBase(player_x, player_y)
 
         #3. patrol between points and attempt to shoot down fighters if detected
