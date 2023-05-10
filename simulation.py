@@ -34,7 +34,7 @@ player_symbol = ""
 SERVER_IP_ADDRESS = "96.66.89.56"
 PLAYER_ID = "snap"
 PLAYER_TEAM = "silver"
-PLAYER_AC_TYPE = "fighter"
+PLAYER_AC_TYPE = "recon"
 COMMAND_CHANNEL = "acs_server"
 TEAM_CHANNEL = "comm"
 client = None
@@ -85,7 +85,7 @@ def get_field_of_view():
             if y <= 49 and y >= 1 and x <= 50 and x >= 1: 
                 row.append([world_map[y-1][x-1]])
             else:
-                row.append(["R"])
+                row.append(["N"])
             for entry in entities:
                 if int(entry[0]) == x and int(entry[1]) == y:
                     row[x - player_x + player_view_radius].append(entry[2])
@@ -108,7 +108,7 @@ def get_field_of_view():
 # -----------------------------------------------------------
 # YOUR FUNCTION GOES HERE
 def get_player_action():
-    global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y, missle_warning  
+    global player_heading, command_to_send, PLAYER_AC_TYPE, target, secondary_target, player_x, player_y, missle_warning, entities
     fire_command = ""
     ########################
     ######### Intel ########
@@ -116,7 +116,7 @@ def get_player_action():
     #check for ballons on the map and add to the ai.discovered_balloons list
     #ai.intel_balloons(player_x, player_y, field_of_view)
     ai.intel_hostiles(player_x, player_y, field_of_view)
-    print(ai.local_threats)
+    #print(ai.local_threats)
     #print("bases remaining: " + str(ai.enemey_bases))
 
     ########################
@@ -145,7 +145,7 @@ def get_player_action():
         #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
         fuel_data = ai.check_fuel(player_x, player_y)
             #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
-        if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0):
+        if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0) or (player_symbol[0] == "R" and a2a==0):
             print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
         
@@ -328,8 +328,17 @@ def on_data_received(data):
                 entities.append(curr_entity)
         elif str(msg_split[0]) == "TEXT":
             print("Recv from server: " + msg_split[1])
-        elif str(msg_split[0]) == "RADIO":
+        elif str(msg_split[0]) == "INTEL":
             print("Recv from radio: " + msg_split[1])
+        elif len(msg_split) > 1 and str(msg_split[1]) == "INTEL":
+            #print("received a radio message")
+            #print(msg_split)
+            ai.intel_from_broadcasts(msg_split)
+
+#INTEL:45,35,AH;37,39,AH;19,2,AF;6,11,AF;6,37,AH;13,40,AH;20,19,AH;41,24,AN;26,8,AN;25,35,AN;9,19,AN;45,32,DH;34,40,DH;17,40,DH;8,34,DH;19,5,DF;4,11,DF;18,21,DH;3,24,BN;4,20,BN;39,21,BN;26,10,BN;25,9,BN;24,18,BN;22,24,BN;22,23,BN;23,23,BN;19,2,C;19,2,C;18,2,C;18,2,C;18,2,C;
+
+
+
                 
 
 #on_data_received("STATUS,FFS,15,25,100,8,0,0,5;FOV,2,FHN,16,22,BHE,18,24")

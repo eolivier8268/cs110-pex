@@ -60,7 +60,7 @@ def draw_world(field_of_view, scr_width, scr_height, player_view_radius):
                 #planes
                 if sym[0] == 'B':
                     draw_bomber((x*grid_width), (y*grid_height), grid_width, grid_height, sym)
-                elif sym[0] == 'I':
+                elif sym[0] == 'R':
                     draw_recon((x*grid_width), (y*grid_height), grid_width, grid_height, sym)
                 elif sym[0] == 'F':
                     draw_fighter((x*grid_width), (y*grid_height), grid_width, grid_height, sym)
