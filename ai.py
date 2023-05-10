@@ -14,8 +14,8 @@ yellow_bases = [(6,37), (13,40)]
 green_bases = [(30,22), (20,21)]
 
 #two points used for the patrol function
-point1 = (22,19)
-point2 = (27,24)
+point1 = (19,2)
+point2 = (6,11)
 
 #gets balloons in the fov and appends them to discovered_balloons. Mostly replaced by local intel 
 def intel_balloons(player_x, player_y, field_of_view):
@@ -107,8 +107,11 @@ def intel_from_broadcasts(message):
             enemey_iads.remove(entry)
     #clear duplicates from lists
     global_threats = list(set(global_threats))
+    print("global threats "+ str(global_threats))
     enemey_bases = list(set(enemey_bases))
+    print('enemey_bases ' + enemey_bases)
     enemey_iads = list(set(enemey_iads))
+    print("enemy_bases "+ enemey_bases)
 
 # determines if you are facing and in range of a target
 def in_range(x, y, distance):

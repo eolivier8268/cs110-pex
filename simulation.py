@@ -7,7 +7,7 @@ import ai
 # PLAYER VARIABLES
 player_x = 13
 player_y = 13
-target = (18,15)
+target = (6,11)
 secondary_target = ()
 player_heading = "N"
 player_view_radius = 10
@@ -34,7 +34,7 @@ player_symbol = ""
 SERVER_IP_ADDRESS = "96.66.89.56"
 PLAYER_ID = "snap"
 PLAYER_TEAM = "silver"
-PLAYER_AC_TYPE = "fighter"
+PLAYER_AC_TYPE = "bomber"
 COMMAND_CHANNEL = "acs_server"
 TEAM_CHANNEL = "comm"
 client = None
@@ -142,11 +142,10 @@ def get_player_action():
             print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
 
-        #2. pursue the nearest plane from the radio's intel, or kill any plane in the fov
-        elif len(ai.local_threats) < 1:
-            target = ai.pursue(player_x, player_y,target)
-        elif len(ai.local_threats) > 0: 
-            target, fire_command = ai.a2akill(player_x, player_y, target)
+        #2. pursue the nearest plane in the fov
+        elif len(ai.local_threats) > 0:
+            print("starting fire sequence")
+            target, fire_command = ai.a2akill(player_x,player_y,target)
         
         #3. if there are no planes, patrol around our base
         else:
