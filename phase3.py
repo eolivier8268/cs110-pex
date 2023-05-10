@@ -31,7 +31,7 @@ def update():
     
 
 # -----------------------------------
-# Main Program'
+# Main Program
 # -----------------------------------
 pythonGraph.open_window(SCREEN_WIDTH, SCREEN_HEIGHT)
 pythonGraph.set_window_title("Air Combat Simulator Phase 3")

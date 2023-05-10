@@ -63,7 +63,7 @@ def recon_broadcast(entities):
     #broadcast via radio all data
 
 def intel_from_broadcasts(message):
-    global global_threats,fuel_sites,enemey_iads
+    global global_threats,fuel_sites,enemey_iads,enemey_bases
     global_threats = []
     message.remove(message[0])
     message.remove(message[0])
@@ -71,6 +71,7 @@ def intel_from_broadcasts(message):
     evaluate_fuel_sites = []
     evaluate_iads = []
     evaluate_hostile_bases = []
+    #print(message)
     #iterate through each triplet of data
     for i in range(int(len(message)/3)):
         curr_entity = []
@@ -80,31 +81,30 @@ def intel_from_broadcasts(message):
         curr_entity.append(int(message[1+3*i]))
         #appends the entity id
         curr_entity.append(str(message[2+3*i]))    
-        print(curr_entity)
         #checks the entity id to determine where to put it 
         if curr_entity[2] == "BN":
-            discovered_balloons.append(curr_entity[0], curr_entity[1])
+            discovered_balloons.append((curr_entity[0], curr_entity[1]))
         if curr_entity[2] == "AF" or curr_entity[2] == "AN":
-            fuel_sites.append(curr_entity[0], curr_entity[1])
-            evaluate_fuel_sites.append(curr_entity[0], curr_entity[1])
+            fuel_sites.append((curr_entity[0], curr_entity[1]))
+            evaluate_fuel_sites.append((curr_entity[0], curr_entity[1]))
         if curr_entity[2] == "AH":
-            enemey_bases.append(curr_entity[0], curr_entity[1])
-            evaluate_hostile_bases.append(curr_entity[0], curr_entity[1])
+            enemey_bases.append((curr_entity[0], curr_entity[1]))
+            evaluate_hostile_bases.append((curr_entity[0], curr_entity[1]))
         if curr_entity[2] == "DH":
-            enemey_iads.append(curr_entity[0], curr_entity[1])
-            evaluate_iads.append(curr_entity[0], curr_entity[1])
+            enemey_iads.append((curr_entity[0], curr_entity[1]))
+            evaluate_iads.append((curr_entity[0], curr_entity[1]))
         if curr_entity[2][:2] == "BH" or curr_entity[2][:2] == "FH" or curr_entity[2][:2] == "RH" or curr_entity[2] == "BN":
-            global_threats.append(curr_entity[0], curr_entity[1])
+            global_threats.append((curr_entity[0], curr_entity[1], curr_entity[2]))
     #iterate through each static intel and see if it was destroyed
     for entry in fuel_sites:
         if entry not in evaluate_fuel_sites:
             fuel_sites.remove(entry)
     for entry in enemey_bases:
         if entry not in evaluate_hostile_bases:
-            enemey_bases.remote(entry)
+            enemey_bases.remove(entry)
     for entry in enemey_iads:
         if entry not in evaluate_iads:
-            enemey_iads.remote(entry)
+            enemey_iads.remove(entry)
     #clear duplicates from lists
     global_threats = list(set(global_threats))
     enemey_bases = list(set(enemey_bases))
@@ -200,13 +200,30 @@ def balloonfarm(player_x, player_y, field_of_view):
             return(best_balloon, fire_command)      
 
 #pursues the closest plane on the map, based on intel from recon plane
-def pursue(player_x,player_y):
+def pursue(player_x,player_y,target):
     potential_targets = []
+    #review all enemy planes
     for threat in global_threats:
-        if threat[2][:2] == "BH" or threat[2][:2] == "FH" or threat[2][:2] == "RH" or threat[2][:2] == "BN":
+        if threat[2][:2] == "BH" or threat[2][:2] == "FH" or threat[2][:2] == "RH":
             dist_to_threat = math.dist((player_x,player_y), (threat[0], threat[1]))
             potential_targets.append([dist_to_threat, threat[0], threat[1], threat[2]])
-    target = min(potential_targets)
+    #review all balloons
+    if len(potential_targets) == 0:
+        for threat in global_threats:
+            if threat[2][:2] == "BN":
+                dist_to_threat = math.dist((player_x,player_y), (threat[0], threat[1]))
+                potential_targets.append([dist_to_threat, threat[0], threat[1], threat[2]])
+    if len(potential_targets) > 0:
+        target = min(potential_targets)
+        #remove the distance count
+        target.remove(target[0])
+        #remove the id
+        target.remove(target[2])
+        target[0]=int(target[0])
+        target[1]=int(target[1])
+        return target
+    else:
+        return target
 
 #looks at the fov, and shoots any plane or balloon in the specified radius
 def a2akill(player_x, player_y, target):

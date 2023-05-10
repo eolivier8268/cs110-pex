@@ -14,7 +14,6 @@ def get_player_action():
     ######### Intel ########
     ########################
     #listen for radio messages
-    
     #gather intel about which planes are in the field of view
     ai.intel_hostiles(player_x, player_y, field_of_view)
 
@@ -35,7 +34,7 @@ def get_player_action():
         for threat in entities:
             if str(threat[2])[0] == "M":
                 missle_warning = True
-    
+
     ########################
     ####Target Selection####
     ########################
@@ -48,17 +47,15 @@ def get_player_action():
             print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
 
-        #2. patrol between points near our bases and attempt to shoot down fighters if detected
-        #adjust the points to patrol in the ai.patrol() function
+        #2. pursue the nearest plane from the radio's intel, or kill any plane in the fov
         elif len(ai.local_threats) < 1:
-            target = ai.patrol(player_x, player_y,target)
-        else: 
+            target = ai.pursue(player_x, player_y,target)
+        elif len(ai.local_threats) > 0: 
             target, fire_command = ai.a2akill(player_x, player_y, target)
-
-        #3. send a fighter to attack balloons
-        #else:
-        #    print('all objectives completed. returning to patrol sequence')
-        #    target,fire_command = ai.balloonfarm(player_x, player_y, field_of_view)   
+        
+        #3. if there are no planes, patrol around our base
+        else:
+            target = ai.patrol(player_x, player_y, target)
 
         ########################
         #######Navigation#######
