@@ -13,9 +13,9 @@ def get_player_action():
     ########################
     ######### Intel ########
     ########################
+    #listen for radio messages
     #gather intel about which planes are in the field of view
     ai.intel_hostiles(player_x, player_y, field_of_view)
-    ai.recon_broadcast(entities)
 
     ########################
     ####Dodging mechanic####
@@ -34,7 +34,7 @@ def get_player_action():
         for threat in entities:
             if str(threat[2])[0] == "M":
                 missle_warning = True
-    
+
     ########################
     ####Target Selection####
     ########################
@@ -43,16 +43,18 @@ def get_player_action():
         #1. check fuel, if the distance to nearest base <= current fuel + 10, set closest base as target, back up current target
         fuel_data = ai.check_fuel(player_x, player_y)
             #a tuple storing (0)the number of tiles to the closest fuel source (1)the index of the closest fuel source in the fuel_sites array
-        if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0) or (player_symbol[0] == "R" and a2a==0):
+        if (fuel <= (fuel_data[0] + 5)) or (countermeasures < 1) or (player_symbol[0] == "F" and a2a==0) or (player_symbol[0] == "B" and bombs==0):
             print("low fuel or munitions, reorinenting")
             target = ai.fuel_sites[fuel_data[1]]
 
-        #2. patrol between bases, but shoot down any hostiles in the AOR
-        # adjust the points to patrol in the ai.patrol() function
-        elif len(ai.local_threats) < 1:
-            target = ai.patrol(player_x,player_y,target)
-        else: 
-            target, fire_command = ai.a2akill(player_x, player_y, target) 
+        #2. pursue the nearest plane in the fov
+        elif len(ai.local_threats) > 0:
+            print("starting fire sequence")
+            target, fire_command = ai.a2akill(player_x,player_y,target)
+        
+        #3. if there are no planes, patrol around our base
+        else:
+            target = ai.patrol(player_x, player_y, target)
 
         ########################
         #######Navigation#######
